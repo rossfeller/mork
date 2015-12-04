@@ -17,15 +17,15 @@ module Mork
       @width  = width
       @height = height
     end
-    
+
     def average(c=nil)
       crop(c).mean
     end
-    
+
     def length
       @patch.length
     end
-    
+
     def dark_centroid(c = nil)
       p = crop c
       sufficient_contrast?(p) or return
@@ -37,9 +37,9 @@ module Mork
       # puts "Centroid: #{ctr_x}, #{ctr_y} - MinX #{xp.min/xp.length}, MaxX #{xp.max/xp.length}, MinY #{yp.min/yp.length}, MaxY #{yp.max/yp.length}"
       return ctr_x, ctr_y
     end
-    
+
     private
-    
+
     def crop(c)
       c =  {x: 0, y: 0, w: @width, h: @height} if c.nil?
       x = c[:x]...c[:x]+c[:w]
@@ -48,7 +48,7 @@ module Mork
       p[true,true] = @patch[x, y]
       p
     end
-    
+
     def sufficient_contrast?(p)
       # puts "Contrast: #{p.stddev}"
       # tested with the few examples: spec/samples/rm0x.jpeg
