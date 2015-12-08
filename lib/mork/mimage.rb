@@ -15,11 +15,11 @@ module Mork
       @writing = nil
       @cmd = []
     end
-    
+
     def valid?
       @valid
     end
-    
+
     def status
       {
         tl: @rm[:tl][:status],
@@ -29,37 +29,37 @@ module Mork
         write: @writing
       }
     end
-    
+
     def ink_black
       reg_pixels.average @grom.ink_black_area
     end
-    
+
     def paper_white
       reg_pixels.average @grom.paper_white_area
     end
-    
+
     def cal_cell_mean
       @grom.calibration_cell_areas.collect { |c| reg_pixels.average c }.mean
     end
-    
+
     def shade_of_barcode_bit(i)
       reg_pixels.average @grom.barcode_bit_area i+1
     end
-    
+
     def shade_of(q,c)
       reg_pixels.average @grom.choice_cell_area(q, c)
     end
-    
+
     def width
       img_size[0].to_i
     end
-    
+
     def height
       img_size[1].to_i
     end
-        
+
     # outline(cells, roundedness)
-    # 
+    #
     # draws on the Mimage a set of cell outlines
     # typically used to highlight the expected responses
     def outline(cells, roundedness=nil)
@@ -73,14 +73,14 @@ module Mork
         @cmd << [:draw, "roundrectangle #{pts}"]
       end
     end
-    
+
     def highlight_all_choices
       cells = (0...@grom.max_questions).collect { |i| (0...@grom.max_choices_per_question).to_a }
       highlight_cells cells
     end
-    
+
     # highlight_cells(cells, roundedness)
-    # 
+    #
     # partially transparent yellow on top of choice cells
     def highlight_cells(cells, roundedness=nil)
       return if cells.empty?
@@ -92,17 +92,17 @@ module Mork
         @cmd << [:draw, "roundrectangle #{pts}"]
       end
     end
-    
+
     def highlight_reg_area
       highlight_rect [@rmsa[:tl], @rmsa[:tr], @rmsa[:br], @rmsa[:bl]]
       return unless valid?
       join [@rm[:tl], @rm[:tr], @rm[:br], @rm[:bl]]
     end
-    
+
     def highlight_barcode(bitstring)
       highlight_rect @grom.barcode_bit_areas bitstring
     end
-    
+
     def highlight_rect(areas)
       return if areas.empty?
       @cmd << [:fill, 'none']
@@ -113,7 +113,7 @@ module Mork
         @cmd << [:draw, "rectangle #{pts}"]
       end
     end
-    
+
     def cross(cells)
       return if cells.empty?
       cells = [cells] if cells.is_a? Hash
@@ -136,7 +136,24 @@ module Mork
         @cmd << [:draw, "line #{pts}"]
       end
     end
-    
+
+    def pipe(cells)
+      return if cells.empty?
+      cells = [cells] if cells.is_a? Hash
+      @cmd << [:stroke, 'green']
+      @cmd << [:strokewidth, '11']
+      coordinates_of(cells).each do |c|
+        pts = [
+          c[:x]+0.5*c[:w],
+          c[:y],
+          c[:x]+0.5*c[:w],
+          c[:y]+c[:h]
+        ].join ' '
+        @cmd << [:draw, "line #{pts}"]
+      end
+    end
+
+
     # write the underlying MiniMagick::Image to disk;
     # if no file name is given, image is processed in-place;
     # if the 2nd arg is false, then stretching is not applied
@@ -154,7 +171,7 @@ module Mork
         end
       end
     end
-    
+
     # ============================================================#
     private                                                       #
     # ============================================================#
@@ -162,25 +179,25 @@ module Mork
       c.distort(:perspective, perspective_points) if reg
       @cmd.each { |cmd| c.send *cmd }
     end
-    
+
     def img_size
       @img_size ||= IO.read("|identify -format '%w,%h' #{@path}").split ','
     end
-    
+
     def raw_pixels
       @raw_pixels ||= begin
         bytes = IO.read("|convert #{@path} gray:-").unpack 'C*'
         NPatch.new bytes, width, height
       end
     end
-    
+
     def reg_pixels
       @reg_pixels ||= begin
         bytes = IO.read("|convert #{@path} -distort Perspective '#{perspective_points}' gray:-").unpack 'C*'
         NPatch.new bytes, width, height
       end
     end
-    
+
     def perspective_points
       [
         @rm[:tl][:x], @rm[:tl][:y],     0,      0,
@@ -197,13 +214,13 @@ module Mork
       pts = [p[0][:x], p[0][:y], p[1][:x], p[1][:y], p[2][:x], p[2][:y], p[3][:x], p[3][:y]].join ' '
       @cmd << [:draw, "polygon #{pts}"]
     end
-        
+
     def coordinates_of(cells)
       cells.collect.each_with_index do |q, i|
         q.collect { |c| @grom.choice_cell_area(i, c) }
       end.flatten
     end
-    
+
     def corner
       @corner_size ||= @grom.cell_corner_size
     end
@@ -218,9 +235,9 @@ module Mork
       # puts "BR: #{@rm[:br][:status].inspect}"
       @rm[:bl] = reg_centroid_on(:bl)
       # puts "BL: #{@rm[:bl][:status].inspect}"
-      @rm.all? { |k,v| v[:status] == :ok }      
+      @rm.all? { |k,v| v[:status] == :ok }
     end
-    
+
     # returns the centroid of the dark region within the given area
     # in the XY coordinates of the entire image
     def reg_centroid_on(corner)
@@ -230,7 +247,7 @@ module Mork
         # puts "Corner #{corner} - Iteration #{i} - Coo #{@rmsa[corner].inspect}"
         cx, cy = raw_pixels.dark_centroid @rmsa[corner]
         if cx.nil?
-          status = :no_contrast  
+          status = :no_contrast
         elsif (cx < @grom.rm_edgy_x) or
               (cy < @grom.rm_edgy_y) or
               (cy > @rmsa[corner][:h] - @grom.rm_edgy_y) or
