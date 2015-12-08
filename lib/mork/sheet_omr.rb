@@ -63,6 +63,15 @@ module Mork
       end
     end
 
+    # array argument should be array of arrays in format (question, choice)
+    def shades_of(array)
+      array.map.with_index do |choices, q|
+        choices.map do |c|
+          @mim.shade_of(q,c)
+        end
+      end
+    end
+
     def mark_logical_array(r = nil)
       return if not_registered
       question_range(r).collect do |q|
@@ -166,7 +175,7 @@ module Mork
     end
 
     def choice_threshold
-      @choice_threshold ||= (@mim.cal_cell_mean - ink_black) * 0.9 + ink_black
+      @choice_threshold ||= (@mim.cal_cell_mean - ink_black) * 0.83 + ink_black
     end
 
     def ink_black
