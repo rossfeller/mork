@@ -97,6 +97,10 @@ module Mork
       @mim.cross mark_array
     end
 
+    def highlight_cells(array)
+      @mim.highlight_cells array
+    end
+
     def highlight_marked
       return if not_registered
       @mim.highlight_cells mark_array
