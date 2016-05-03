@@ -140,6 +140,11 @@ module Mork
       @mim.write(fname)
     end
 
+    def write_name(fname)
+      return if not_registered
+      @mim.write_name(fname)
+    end
+
     # write_raw(output_path_file_name)
     #
     # writes out a copy of the source image before registration;

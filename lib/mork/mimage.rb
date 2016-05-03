@@ -172,6 +172,17 @@ module Mork
       end
     end
 
+    def write_name(fname)
+      # writes name header field to output file.
+      # should check that fname is given. throw error if not.
+      MiniMagick::Tool::Convert.new(false) do |img|
+        img << @path
+        img.distort(:perspective, perspective_points)
+        img.send *[:crop, "#{@grom.name_area[:w]}x#{@grom.name_area[:h]}+#{@grom.name_area[:x]}+#{@grom.name_area[:y]}"]
+        img << fname
+      end
+    end
+
     # ============================================================#
     private                                                       #
     # ============================================================#
